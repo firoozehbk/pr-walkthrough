@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Peng–Robinson Mixture Walkthrough</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: inputs panel pinned on the left, the five calculation steps reading down the right; stacks to one column on a phone. */
+:root {
+  --bg: #f4f7f8;
+  --surface: #ffffff;
+  --ink: #16242b;
+  --muted: #55676f;
+  --line: #d3dce0;
+  --accent: #0b6e8a;
+  --work: #e7f1f4;
+  --warn: #9a4a00;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10181c; --surface: #172228; --ink: #e4ecef; --muted: #9db0b9;
+    --line: #2b3b43; --accent: #5cc0dc; --work: #1b3038; --warn: #f0a860;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10181c; --surface: #172228; --ink: #e4ecef; --muted: #9db0b9;
+  --line: #2b3b43; --accent: #5cc0dc; --work: #1b3038; --warn: #f0a860;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+.page { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; }
+header.top { margin-bottom: 24px; }
+h1 { font-size: 1.75rem; line-height: 1.2; font-weight: 600; margin: 0 0 8px; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 65ch; }
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 32px); overflow-y: auto; box-sizing: border-box; }
+.panel h2 { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 0.85rem; color: var(--muted); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+select, input[type="number"] { font: inherit; font-family: var(--font-data); font-size: 0.92rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; width: 100%; box-sizing: border-box; min-width: 0; }
+select { font-family: var(--font-body); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button { font: inherit; font-size: 0.88rem; color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.result { border-top: 1px solid var(--line); padding-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.result div { display: flex; flex-direction: column; }
+.result dt, .result .k { font-size: 0.78rem; color: var(--muted); }
+.result .v { font-family: var(--font-data); font-size: 1.05rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.result .phase { grid-column: 1 / -1; font-size: 0.85rem; color: var(--muted); }
+.error { color: var(--warn); font-size: 0.88rem; margin: 0; }
+.steps { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px 22px; min-width: 0; }
+.step .eyebrow { font-family: var(--font-data); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 2px; }
+.step h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 8px; text-wrap: balance; }
+.step p { margin: 0 0 10px; max-width: 68ch; }
+.step p + h2 { margin-top: 20px; }
+.eq { overflow-x: auto; overflow-y: hidden; padding: 4px 0; font-family: var(--font-data); font-size: 0.9rem; }
+.eq mjx-container { margin: 0.5em 0 !important; }
+.work { background: var(--work); border-radius: 4px; padding: 12px 14px; margin-top: 10px; min-width: 0; }
+.work > .tag { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 4px; }
+.work p { margin: 8px 0 0; font-size: 0.93rem; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+td { font-family: var(--font-data); }
+th { font-weight: 600; color: var(--muted); font-size: 0.82rem; }
+th:first-child, td:first-child { text-align: left; font-family: var(--font-body); }
+tbody tr:last-child td { border-bottom: 0; }
+.rootpick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; font-size: 0.88rem; color: var(--muted); }
+svg.plot { display: block; width: 100%; height: auto; max-width: 600px; margin-top: 10px; }
+svg.plot text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+svg.plot .axis { stroke: var(--line); stroke-width: 1; fill: none; }
+svg.plot .zero { stroke: var(--muted); stroke-width: 1; fill: none; }
+svg.plot .curve { stroke: var(--accent); stroke-width: 2; fill: none; }
+svg.plot .root { fill: var(--accent); stroke: var(--surface); stroke-width: 1.5; }
+svg.plot .root.mid { fill: var(--surface); stroke: var(--muted); }
+svg.plot text.rootlabel { fill: var(--ink); font-weight: 500; }
+.note { font-size: 0.9rem; color: var(--muted); margin: 4px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; }
+.note strong { color: var(--ink); }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; max-height: none; overflow-y: visible; }
+  .step { padding: 16px; }
+  h1 { font-size: 1.45rem; }
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <h1>Peng–Robinson for a binary mixture</h1>
+    <p class="lede">Change the components, composition, temperature or pressure, and every step below recalculates with your numbers. The page opens on a CO<sub>2</sub>–methane example.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Inputs">
+      <h2>Inputs</h2>
+      <div class="field">
+        <label for="c1">Component 1</label>
+        <select id="c1"></select>
+      </div>
+      <div class="field">
+        <label for="c2">Component 2</label>
+        <select id="c2"></select>
+      </div>
+      <div class="field">
+        <label for="x1">Mole fraction of component 1</label>
+        <input type="range" id="x1r" min="0" max="1" step="0.01" value="0.4" aria-label="Mole fraction of component 1 slider">
+        <input type="number" id="x1" min="0" max="1" step="0.01" value="0.4">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="T">T (K)</label>
+          <input type="number" id="T" min="1" step="5" value="300">
+        </div>
+        <div class="field">
+          <label for="P">P (bar)</label>
+          <input type="number" id="P" min="0.01" step="5" value="50">
+        </div>
+      </div>
+      <div class="field">
+        <label for="k12">Interaction parameter k<sub>12</sub></label>
+        <input type="number" id="k12" step="0.01" value="0.09">
+        <p class="hint">Use the value from your data source. It resets to 0 when you change a component.</p>
+      </div>
+      <button type="button" id="reset">Reset to the starting example</button>
+      <p class="error" id="error" hidden></p>
+      <div class="result" id="summary" aria-live="polite"></div>
+    </aside>
+
+    <main class="steps">
+      <section class="step">
+        <p class="eyebrow">Step 1</p>
+        <h2>Pure-component parameters</h2>
+        <p>Calculate a and b for each component from its critical temperature, critical pressure and acentric factor. Only α depends on temperature, so recalculate it whenever T changes.</p>
+        <div class="eq">\[ a_i = 0.45724\,\frac{R^2 T_{c,i}^2}{P_{c,i}}\,\alpha_i \qquad b_i = 0.07780\,\frac{R\,T_{c,i}}{P_{c,i}} \]</div>
+        <div class="eq">\[ \alpha_i = \left[1 + \kappa_i\left(1 - \sqrt{T/T_{c,i}}\right)\right]^2 \qquad \kappa_i = 0.37464 + 1.54226\,\omega_i - 0.26992\,\omega_i^2 \]</div>
+        <div class="work">
+          <p class="tag">With your numbers</p>
+          <div class="tablewrap" id="s1"></div>
+          <p>R = 83.14 cm³·bar/(mol·K). a is in bar·cm⁶/mol² and b in cm³/mol.</p>
+        </div>
+      </section>
+
+      <section class="step">
+        <p class="eyebrow">Step 2</p>
+        <h2>Mixing rules</h2>
+        <p>Treat the mixture as one fluid whose a and b are composition-weighted averages. The interaction parameter k<sub>12</sub> corrects the attraction between unlike molecules.</p>
+        <div class="eq">\[ a_{mix} = x_1^2 a_1 + 2 x_1 x_2 a_{12} + x_2^2 a_2 \qquad a_{12} = \sqrt{a_1 a_2}\,(1 - k_{12}) \qquad b_{mix} = x_1 b_1 + x_2 b_2 \]</div>
+        <div class="work">
+          <p class="tag">With your numbers</p>
+          <div class="eq dyn" id="s2"></div>
+        </div>
+      </section>
+
+      <section class="step">
+        <p class="eyebrow">Step 3</p>
+        <h2>Solve the cubic for Z</h2>
+        <p>Form the dimensionless groups A and B, then solve the cubic for the compressibility factor Z. One real root means a single phase. With three real roots, the largest is vapour-like, the smallest is liquid-like, and the middle one has no physical meaning.</p>
+        <div class="eq">\[ A = \frac{a_{mix}\,P}{(RT)^2} \qquad B = \frac{b_{mix}\,P}{RT} \]</div>
+        <div class="eq">\[ Z^3 - (1-B)\,Z^2 + (A - 3B^2 - 2B)\,Z - (AB - B^2 - B^3) = 0 \]</div>
+        <div class="work">
+          <p class="tag">With your numbers</p>
+          <div class="eq dyn" id="s3"></div>
+          <p id="s3text"></p>
+          <div class="rootpick" id="rootpick" hidden>
+            <span>Root used in steps 4 and 5:</span>
+            <button type="button" id="pickL" aria-pressed="false">Liquid-like</button>
+            <button type="button" id="pickV" aria-pressed="false">Vapour-like</button>
+          </div>
+          <div id="plot"></div>
+        </div>
+      </section>
+
+      <section class="step">
+        <p class="eyebrow">Step 4</p>
+        <h2>Molar volume</h2>
+        <p>Convert Z to a molar volume and compare it with the ideal-gas value to see how far the mixture is from ideal behaviour.</p>
+        <div class="eq">\[ V = \frac{ZRT}{P} \]</div>
+        <div class="work">
+          <p class="tag">With your numbers</p>
+          <div class="eq dyn" id="s4"></div>
+          <p id="s4text"></p>
+        </div>
+      </section>
+
+      <section class="step">
+        <p class="eyebrow">Step 5</p>
+        <h2>Fugacity coefficients</h2>
+        <p>The fugacity coefficient of each component follows from Z, A and B. The fugacity is then mole fraction × fugacity coefficient × pressure. These are the quantities needed for vapour–liquid equilibrium, where K<sub>i</sub> is the ratio of the liquid to the vapour fugacity coefficient.</p>
+        <div class="eq">\[ \ln\hat{\phi}_i = \frac{b_i}{b_{mix}}(Z-1) - \ln(Z-B) - \frac{A}{2\sqrt{2}\,B}\left[\frac{2\sum_j x_j a_{ij}}{a_{mix}} - \frac{b_i}{b_{mix}}\right]\ln\left[\frac{Z + (1+\sqrt{2})B}{Z + (1-\sqrt{2})B}\right] \]</div>
+        <div class="work">
+          <p class="tag">With your numbers</p>
+          <div class="eq dyn" id="s5"></div>
+          <div class="tablewrap" id="s5table"></div>
+        </div>
+      </section>
+
+      <section class="step">
+        <p class="eyebrow">Application</p>
+        <h2>What fugacity means</h2>
+        <p>Fugacity is the pressure a component effectively exerts once the forces between molecules are accounted for. In an ideal gas it equals the partial pressure. In a real mixture the fugacity coefficient corrects it:</p>
+        <div class="eq">\[ \hat{f}_i = \hat{\phi}_i\,x_i\,P \]</div>
+        <p>Fugacity decides where a component goes. A component moves from the phase where its fugacity is higher to the phase where it is lower, and equilibrium is reached when the two are equal. A flash calculation uses exactly this condition.</p>
+        <h2>Flash calculation</h2>
+        <p>A feed of composition z enters a vessel at fixed T and P and may split into a liquid (x) and a vapour (y). The flash finds the split at which every component has the same fugacity in both phases. The vapour fraction β comes from the Rachford–Rice equation:</p>
+        <div class="eq">\[ K_i = \frac{y_i}{x_i} = \frac{\hat{\phi}_i^{L}}{\hat{\phi}_i^{V}} \qquad \sum_i \frac{z_i\,(K_i - 1)}{1 + \beta\,(K_i - 1)} = 0 \qquad x_i = \frac{z_i}{1 + \beta\,(K_i - 1)} \qquad y_i = K_i\,x_i \]</div>
+        <p>The loop is: guess K<sub>i</sub>, solve for β, calculate x and y, run steps 2 to 5 for each phase (smallest Z for the liquid, largest Z for the vapour), update K<sub>i</sub>, and repeat until K<sub>i</sub> stops changing.</p>
+        <div class="work">
+          <p class="tag">With your numbers as the feed</p>
+          <p id="flashText"></p>
+          <div class="tablewrap" id="flashTable"></div>
+          <p id="flashNote"></p>
+          <div class="rootpick" id="flashFind"><button type="button" id="twoPhase">Find two-phase conditions for this mixture</button></div>
+        </div>
+      </section>
+
+      <p class="note"><strong>For example only.</strong> This page is not a reference for data. The critical properties are rounded and the interaction parameters are illustrative.</p>
+    </main>
+  </div>
+</div>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  options: { enableMenu: false }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<script>
+//CALC-START
+const R = 83.14; // cm3 bar / (mol K)
+const COMPONENTS = [
+  { id: 'co2', name: 'Carbon dioxide', f: 'CO₂', Tc: 304.2, Pc: 73.83, w: 0.224 },
+  { id: 'ch4', name: 'Methane', f: 'CH₄', Tc: 190.6, Pc: 45.99, w: 0.012 },
+  { id: 'c2', name: 'Ethane', f: 'C₂H₆', Tc: 305.3, Pc: 48.72, w: 0.100 },
+  { id: 'c3', name: 'Propane', f: 'C₃H₈', Tc: 369.8, Pc: 42.48, w: 0.152 },
+  { id: 'c4', name: 'n-Butane', f: 'n-C₄H₁₀', Tc: 425.1, Pc: 37.96, w: 0.200 },
+  { id: 'c5', name: 'n-Pentane', f: 'n-C₅H₁₂', Tc: 469.7, Pc: 33.70, w: 0.252 },
+  { id: 'n2', name: 'Nitrogen', f: 'N₂', Tc: 126.2, Pc: 34.00, w: 0.038 },
+  { id: 'h2s', name: 'Hydrogen sulfide', f: 'H₂S', Tc: 373.1, Pc: 89.99, w: 0.100 }
+];
+
+function pure(c, T) {
+  const kappa = 0.37464 + 1.54226 * c.w - 0.26992 * c.w * c.w;
+  const alpha = Math.pow(1 + kappa * (1 - Math.sqrt(T / c.Tc)), 2);
+  return {
+    kappa, alpha,
+    a: 0.45724 * R * R * c.Tc * c.Tc / c.Pc * alpha,
+    b: 0.07780 * R * c.Tc / c.Pc
+  };
+}
+
+// Real roots of z^3 + c2 z^2 + c1 z + c0 = 0, ascending.
+function cubicRoots(c2, c1, c0) {
+  const p = c1 - c2 * c2 / 3;
+  const q = 2 * c2 * c2 * c2 / 27 - c2 * c1 / 3 + c0;
+  const disc = q * q / 4 + p * p * p / 27;
+  const shift = -c2 / 3;
+  if (disc > 0) {
+    const s = Math.sqrt(disc);
+    return [Math.cbrt(-q / 2 + s) + Math.cbrt(-q / 2 - s) + shift];
+  }
+  const m = 2 * Math.sqrt(-p / 3);
+  let arg = (3 * q) / (p * m);
+  arg = Math.max(-1, Math.min(1, arg));
+  const th = Math.acos(arg) / 3;
+  return [0, 1, 2].map(k => m * Math.cos(th - 2 * Math.PI * k / 3) + shift).sort((u, v) => u - v);
+}
+
+function compute(inp) {
+  const comps = [inp.c1, inp.c2];
+  const x = [inp.x1, 1 - inp.x1];
+  const pp = comps.map(c => pure(c, inp.T));
+  const a12 = Math.sqrt(pp[0].a * pp[1].a) * (1 - inp.k12);
+  const aij = [[pp[0].a, a12], [a12, pp[1].a]];
+  const am = x[0] * x[0] * aij[0][0] + 2 * x[0] * x[1] * a12 + x[1] * x[1] * aij[1][1];
+  const bm = x[0] * pp[0].b + x[1] * pp[1].b;
+  const RT = R * inp.T;
+  const A = am * inp.P / (RT * RT);
+  const B = bm * inp.P / RT;
+  const c2 = -(1 - B), c1 = A - 3 * B * B - 2 * B, c0 = -(A * B - B * B - B * B * B);
+  const all = cubicRoots(c2, c1, c0);
+  const s2 = Math.SQRT2;
+  const pre = A / (2 * s2 * B);
+  const S = [x[0] * aij[0][0] + x[1] * aij[0][1], x[0] * aij[1][0] + x[1] * aij[1][1]];
+  const roots = all.filter(z => z > B).map(Z => {
+    const L = Math.log((Z + (1 + s2) * B) / (Z + (1 - s2) * B));
+    const lnphi = [0, 1].map(i => (pp[i].b / bm) * (Z - 1) - Math.log(Z - B) - pre * (2 * S[i] / am - pp[i].b / bm) * L);
+    const g = (x[0] > 0 ? x[0] * lnphi[0] : 0) + (x[1] > 0 ? x[1] * lnphi[1] : 0);
+    return { Z, L, lnphi, phi: lnphi.map(Math.exp), g, V: Z * RT / inp.P };
+  });
+  return { comps, x, pp, a12, am, bm, A, B, c2, c1, c0, all, roots, pre, S, Videal: RT / inp.P };
+}
+// ln(phi) of both components for one phase of composition xx: 'L' uses the smallest Z root, 'V' the largest.
+function phaseLnPhi(pp, xx, T, P, k12, which) {
+  const a12 = Math.sqrt(pp[0].a * pp[1].a) * (1 - k12);
+  const am = xx[0] * xx[0] * pp[0].a + 2 * xx[0] * xx[1] * a12 + xx[1] * xx[1] * pp[1].a;
+  const bm = xx[0] * pp[0].b + xx[1] * pp[1].b;
+  const RT = R * T;
+  const A = am * P / (RT * RT), B = bm * P / RT;
+  const zs = cubicRoots(-(1 - B), A - 3 * B * B - 2 * B, -(A * B - B * B - B * B * B)).filter(z => z > B);
+  const Z = which === 'L' ? zs[0] : zs[zs.length - 1];
+  const s2 = Math.SQRT2;
+  const L = Math.log((Z + (1 + s2) * B) / (Z + (1 - s2) * B));
+  const S = [xx[0] * pp[0].a + xx[1] * a12, xx[0] * a12 + xx[1] * pp[1].a];
+  return [0, 1].map(i => (pp[i].b / bm) * (Z - 1) - Math.log(Z - B) - A / (2 * s2 * B) * (2 * S[i] / am - pp[i].b / bm) * L);
+}
+
+// Isothermal flash by successive substitution on K.
+function flash(inp) {
+  const comps = [inp.c1, inp.c2];
+  const z = [inp.x1, 1 - inp.x1];
+  if (z[0] <= 0 || z[1] <= 0) return { twoPhase: false, pure: true };
+  const pp = comps.map(c => pure(c, inp.T));
+  let K = comps.map(c => c.Pc / inp.P * Math.exp(5.373 * (1 + c.w) * (1 - c.Tc / inp.T)));
+  const g = (b, KK) => z[0] * (KK[0] - 1) / (1 + b * (KK[0] - 1)) + z[1] * (KK[1] - 1) / (1 + b * (KK[1] - 1));
+  let beta = 0.5, x = z, y = z, lnL, lnV, it = 0, converged = false, trivial = false;
+  for (it = 1; it <= 500; it++) {
+    if (g(0, K) <= 0) beta = 0;
+    else if (g(1, K) >= 0) beta = 1;
+    else {
+      let lo = 0, hi = 1;
+      for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; if (g(mid, K) > 0) lo = mid; else hi = mid; }
+      beta = (lo + hi) / 2;
+    }
+    x = z.map((zi, i) => zi / (1 + beta * (K[i] - 1)));
+    y = x.map((xi, i) => K[i] * xi);
+    const sx = x[0] + x[1], sy = y[0] + y[1];
+    x = x.map(v => v / sx); y = y.map(v => v / sy);
+    lnL = phaseLnPhi(pp, x, inp.T, inp.P, inp.k12, 'L');
+    lnV = phaseLnPhi(pp, y, inp.T, inp.P, inp.k12, 'V');
+    const Kn = [0, 1].map(i => Math.exp(lnL[i] - lnV[i]));
+    const err = Math.pow(Math.log(Kn[0] / K[0]), 2) + Math.pow(Math.log(Kn[1] / K[1]), 2);
+    K = Kn;
+    if (Math.max(Math.abs(Math.log(K[0])), Math.abs(Math.log(K[1]))) < 1e-5) { trivial = true; break; }
+    if (err < 1e-16) { converged = true; break; }
+  }
+  const twoPhase = converged && !trivial && beta > 1e-9 && beta < 1 - 1e-9;
+  return {
+    twoPhase, beta, x, y, K, it,
+    kind: trivial || !converged ? '' : (beta >= 1 - 1e-9 ? 'vapour' : beta <= 1e-9 ? 'liquid' : ''),
+    fL: x.map((v, i) => v * Math.exp(lnL[i]) * inp.P),
+    fV: y.map((v, i) => v * Math.exp(lnV[i]) * inp.P)
+  };
+}
+
+// Search for a T and P at which this feed splits into two phases, keeping the current T if it can.
+function findTwoPhase(inp) {
+  const Tmix = inp.x1 * inp.c1.Tc + (1 - inp.x1) * inp.c2.Tc;
+  const Ts = [inp.T].concat([0.9, 0.8, 0.7, 1.0, 0.6].map(f => Math.round(f * Tmix)));
+  if (inp.c1.id === inp.c2.id) return null;
+  // A coarse pressure scan first, then a fine one for mixtures with a narrow two-phase region.
+  for (const [N, sig] of [[90, 2], [900, 3]]) {
+    for (const T of Ts) {
+      let best = null;
+      for (let n = 0; n <= N; n++) {
+        const P = Number((0.05 * Math.pow(300 / 0.05, n / N)).toPrecision(sig));
+        const f = flash(Object.assign({}, inp, { T, P }));
+        if (f.twoPhase && (!best || Math.abs(f.beta - 0.5) < Math.abs(best.beta - 0.5))) best = { T, P, beta: f.beta };
+      }
+      if (best) return best;
+    }
+  }
+  return null;
+}
+//CALC-END
+
+// ---------- formatting ----------
+function num(v, s) {
+  s = s || 4;
+  if (v === 0) return '0';
+  const av = Math.abs(v);
+  if (av >= 1e5 || av < 1e-4) return sciTex(v, s);
+  return String(Number(v.toPrecision(s)));
+}
+function sciParts(v, s) {
+  let e = Math.floor(Math.log10(Math.abs(v)));
+  let m = v / Math.pow(10, e);
+  if (Math.abs(Number(m.toFixed(s - 1))) >= 10) { m /= 10; e += 1; }
+  return { m: m.toFixed(s - 1), e };
+}
+function sciTex(v, s) { const p = sciParts(v, s || 4); return p.m + '\\times10^{' + p.e + '}'; }
+function sciHtml(v, s) { const p = sciParts(v, s || 4); return p.m + ' × 10<sup>' + p.e + '</sup>'; }
+function par(v, s) { return '(' + num(v, s) + ')'; }
+function signed(v, s) { return (v < 0 ? '- ' : '+ ') + num(Math.abs(v), s); }
+function plain(v, s) { return String(Number(v.toPrecision(s || 4))); }
+
+// ---------- state and inputs ----------
+const $ = id => document.getElementById(id);
+const els = { c1: $('c1'), c2: $('c2'), x1: $('x1'), x1r: $('x1r'), T: $('T'), P: $('P'), k12: $('k12') };
+let rootChoice = 'auto';
+let searchFailed = false;
+
+COMPONENTS.forEach(c => {
+  for (const sel of [els.c1, els.c2]) {
+    const o = document.createElement('option');
+    o.value = c.id; o.textContent = c.name + ' (' + c.f + ')';
+    sel.appendChild(o);
+  }
+});
+function setDefaults() {
+  els.c1.value = 'co2'; els.c2.value = 'ch4';
+  els.x1.value = '0.4'; els.x1r.value = '0.4';
+  els.T.value = '300'; els.P.value = '50'; els.k12.value = '0.09';
+  rootChoice = 'auto';
+}
+
+function readInputs() {
+  const byId = id => COMPONENTS.find(c => c.id === id);
+  const inp = {
+    c1: byId(els.c1.value), c2: byId(els.c2.value),
+    x1: parseFloat(els.x1.value), T: parseFloat(els.T.value),
+    P: parseFloat(els.P.value), k12: parseFloat(els.k12.value)
+  };
+  if (!(inp.x1 >= 0 && inp.x1 <= 1)) return { error: 'Enter a mole fraction between 0 and 1.' };
+  if (!(inp.T > 0)) return { error: 'Enter a temperature above 0 K.' };
+  if (!(inp.P > 0)) return { error: 'Enter a pressure above 0 bar.' };
+  if (!isFinite(inp.k12) || inp.k12 >= 1) return { error: 'Enter an interaction parameter below 1.' };
+  return { inp };
+}
+
+// ---------- typesetting ----------
+const mjReady = () => window.MathJax && MathJax.startup && MathJax.typesetPromise;
+let chain = mjReady() ? MathJax.startup.promise : Promise.resolve();
+let firstRender = true;
+function typeset(nodes) {
+  if (!mjReady()) return;
+  chain = chain.then(() => MathJax.typesetPromise(nodes)).catch(() => {});
+}
+function setTex(node, lines) {
+  if (mjReady() && !firstRender) MathJax.typesetClear([node]);
+  node.textContent = lines.map(l => '\\[ ' + l + ' \\]').join('\n');
+}
+
+// ---------- plot of the cubic ----------
+function plotCubic(r, chosen) {
+  const W = 560, H = 222, ml = 46, mr = 14, mt = 22, mb = 44;
+  const zTop = r.roots[r.roots.length - 1].Z;
+  const zMax = Math.max(1.2, Math.ceil((zTop + 0.15) * 5) / 5);
+  const f = z => z * z * z + r.c2 * z * z + r.c1 * z + r.c0;
+  let yr = 0;
+  const zLim = Math.min(zMax, zTop + 0.12);
+  for (let i = 0; i <= 200; i++) { const z = zLim * i / 200; yr = Math.max(yr, Math.abs(f(z))); }
+  yr = (yr || 1e-3) * 1.2;
+  const X = z => ml + (W - ml - mr) * z / zMax;
+  const Y = v => mt + (H - mt - mb) * (1 - (v + yr) / (2 * yr));
+  let pts = '';
+  for (let i = 0; i <= 300; i++) {
+    const z = zMax * i / 300;
+    const v = Math.max(-3 * yr, Math.min(3 * yr, f(z)));
+    pts += X(z).toFixed(1) + ',' + Y(v).toFixed(1) + ' ';
+  }
+  let s = '<svg class="plot" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Plot of the cubic f(Z) against Z, with its real roots marked">';
+  s += '<defs><clipPath id="clipz"><rect x="' + ml + '" y="' + mt + '" width="' + (W - ml - mr) + '" height="' + (H - mt - mb) + '"/></clipPath></defs>';
+  s += '<rect class="axis" x="' + ml + '" y="' + mt + '" width="' + (W - ml - mr) + '" height="' + (H - mt - mb) + '"/>';
+  s += '<line class="zero" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(0) + '" y2="' + Y(0) + '"/>';
+  for (let t = 0; t <= zMax + 1e-9; t += 0.2) {
+    s += '<line class="axis" x1="' + X(t) + '" x2="' + X(t) + '" y1="' + (H - mb) + '" y2="' + (H - mb + 4) + '"/>';
+    s += '<text x="' + X(t) + '" y="' + (H - mb + 16) + '" text-anchor="middle">' + t.toFixed(1) + '</text>';
+  }
+  s += '<text x="' + (ml + (W - ml - mr) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">Z</text>';
+  s += '<text x="' + (ml - 6) + '" y="' + (Y(0) + 4) + '" text-anchor="end">0</text>';
+  s += '<text x="' + ml + '" y="' + (mt - 8) + '" text-anchor="start">f(Z)</text>';
+  s += '<polyline class="curve" clip-path="url(#clipz)" points="' + pts + '"/>';
+  r.all.forEach((z, i) => {
+    if (z < 0 || z > zMax) return;
+    const physical = z > r.B;
+    const mid = r.all.length === 3 && i === 1;
+    const isChosen = physical && Math.abs(z - chosen.Z) < 1e-12;
+    s += '<circle class="root' + (mid || !physical ? ' mid' : '') + '" cx="' + X(z) + '" cy="' + Y(0) + '" r="' + (isChosen ? 6 : 4.5) + '"/>';
+    // Keep each label on the side of the crossing that the curve leaves free.
+    const last = i === r.all.length - 1;
+    const lx = X(z) + (last ? -8 : 8), ly = Y(0) + (i === 0 && !last ? 18 : -9);
+    s += '<text class="rootlabel" x="' + lx + '" y="' + ly + '" text-anchor="' + (last ? 'end' : 'start') + '">' + plain(z, 4) + '</text>';
+  });
+  s += '</svg>';
+  return s;
+}
+
+// ---------- render ----------
+function render() {
+  const got = readInputs();
+  const err = $('error');
+  if (got.error) { err.textContent = got.error; err.hidden = false; return; }
+  err.hidden = true;
+  const inp = got.inp;
+  const r = compute(inp);
+  const [p1, p2] = r.pp;
+  const x = r.x;
+
+  let chosen;
+  const two = r.roots.length > 1;
+  if (!two) chosen = r.roots[0];
+  else if (rootChoice === 'l') chosen = r.roots[0];
+  else if (rootChoice === 'v') chosen = r.roots[r.roots.length - 1];
+  else chosen = r.roots[0].g <= r.roots[r.roots.length - 1].g ? r.roots[0] : r.roots[r.roots.length - 1];
+  const isLiquid = two && chosen === r.roots[0];
+
+  // Step 1 table
+  const rows = r.comps.map((c, i) =>
+    '<tr><td>' + c.f + ' (' + (i + 1) + ')</td><td>' + c.Tc + '</td><td>' + c.Pc + '</td><td>' + c.w.toFixed(3) +
+    '</td><td>' + r.pp[i].kappa.toFixed(4) + '</td><td>' + r.pp[i].alpha.toFixed(4) + '</td><td>' + sciHtml(r.pp[i].a) +
+    '</td><td>' + r.pp[i].b.toFixed(2) + '</td></tr>').join('');
+  $('s1').innerHTML = '<table><thead><tr><th>Component</th><th>T<sub>c</sub> (K)</th><th>P<sub>c</sub> (bar)</th><th>ω</th><th>κ</th><th>α</th><th>a</th><th>b</th></tr></thead><tbody>' + rows + '</tbody></table>';
+
+  // Step 2
+  setTex($('s2'), [
+    'a_{12} = \\sqrt{(' + sciTex(p1.a) + ')(' + sciTex(p2.a) + ')}\\,(1 - ' + (inp.k12 < 0 ? par(inp.k12, 3) : num(inp.k12, 3)) + ') = ' + sciTex(r.a12),
+    'a_{mix} = ' + par(x[0], 3) + '^2(' + sciTex(p1.a) + ') + 2' + par(x[0], 3) + par(x[1], 3) + '(' + sciTex(r.a12) + ') + ' + par(x[1], 3) + '^2(' + sciTex(p2.a) + ') = ' + sciTex(r.am),
+    'b_{mix} = ' + par(x[0], 3) + par(p1.b) + ' + ' + par(x[1], 3) + par(p2.b) + ' = ' + num(r.bm) + '\\ \\text{cm}^3/\\text{mol}'
+  ]);
+
+  // Step 3
+  setTex($('s3'), [
+    'A = \\frac{(' + sciTex(r.am) + ')' + par(inp.P) + '}{(83.14 \\times ' + num(inp.T) + ')^2} = ' + num(r.A) +
+      ' \\qquad B = \\frac{' + par(r.bm) + par(inp.P) + '}{(83.14)' + par(inp.T) + '} = ' + num(r.B),
+    'Z^3 ' + signed(r.c2) + '\\,Z^2 ' + signed(r.c1) + '\\,Z ' + signed(r.c0) + ' = 0'
+  ]);
+  let t3;
+  if (!two) {
+    t3 = 'One real root, Z = ' + plain(chosen.Z) + ', so the mixture is a single phase at these conditions.';
+  } else {
+    t3 = 'Three real roots. Liquid-like Z = ' + plain(r.roots[0].Z) + ' and vapour-like Z = ' + plain(r.roots[r.roots.length - 1].Z) +
+      '. The ' + (r.roots[0].g <= r.roots[r.roots.length - 1].g ? 'liquid-like' : 'vapour-like') +
+      ' root has the lower Gibbs energy at this composition, so it is used by default.';
+  }
+  $('s3text').textContent = t3;
+  $('rootpick').hidden = !two;
+  $('pickL').setAttribute('aria-pressed', String(two && isLiquid));
+  $('pickV').setAttribute('aria-pressed', String(two && !isLiquid));
+  $('plot').innerHTML = plotCubic(r, chosen);
+
+  // Step 4
+  setTex($('s4'), [
+    'V = \\frac{' + par(chosen.Z) + '(83.14)' + par(inp.T) + '}{' + num(inp.P) + '} = ' + num(chosen.V) + '\\ \\text{cm}^3/\\text{mol}'
+  ]);
+  const dev = (chosen.V / r.Videal - 1) * 100;
+  $('s4text').textContent = 'The ideal-gas value RT/P is ' + plain(r.Videal) + ' cm³/mol, so the PR volume is ' +
+    plain(Math.abs(dev), 3) + '% ' + (dev < 0 ? 'lower' : 'higher') + '.';
+
+  // Step 5
+  const ratio = [p1.b / r.bm, p2.b / r.bm];
+  const q = [2 * r.S[0] / r.am, 2 * r.S[1] / r.am];
+  setTex($('s5'), [
+    '\\frac{A}{2\\sqrt{2}\\,B} = ' + num(r.pre) + ' \\qquad \\ln\\left[\\frac{Z + (1+\\sqrt{2})B}{Z + (1-\\sqrt{2})B}\\right] = ' + num(chosen.L) +
+      ' \\qquad \\ln(Z - B) = ' + num(Math.log(chosen.Z - r.B)),
+    '\\textstyle\\sum_j x_j a_{1j} = ' + par(x[0], 3) + '(' + sciTex(p1.a) + ') + ' + par(x[1], 3) + '(' + sciTex(r.a12) + ') = ' + sciTex(r.S[0]),
+    '\\ln\\hat{\\phi}_1 = ' + num(ratio[0]) + '(' + num(chosen.Z) + ' - 1) - ' + par(Math.log(chosen.Z - r.B)) + ' - ' + num(r.pre) +
+      '\\,(' + num(q[0]) + ' - ' + num(ratio[0]) + ')' + par(chosen.L) + ' = ' + num(chosen.lnphi[0])
+  ]);
+  const frows = r.comps.map((c, i) =>
+    '<tr><td>' + c.f + ' (' + (i + 1) + ')</td><td>' + q[i].toFixed(4) + '</td><td>' + ratio[i].toFixed(4) + '</td><td>' +
+    chosen.lnphi[i].toFixed(4) + '</td><td>' + chosen.phi[i].toFixed(3) + '</td><td>' + plain(x[i] * chosen.phi[i] * inp.P, 3) + '</td></tr>').join('');
+  $('s5table').innerHTML = '<table><thead><tr><th>Component</th><th>2Σx<sub>j</sub>a<sub>ij</sub> / a<sub>mix</sub></th><th>b<sub>i</sub> / b<sub>mix</sub></th><th>ln φ<sub>i</sub></th><th>φ<sub>i</sub></th><th>Fugacity (bar)</th></tr></thead><tbody>' + frows + '</tbody></table>';
+
+  // Application: flash of the input mixture at T and P
+  const fl = flash(inp);
+  if (fl.twoPhase) {
+    $('flashText').textContent = 'The feed splits into ' + (fl.beta * 100).toFixed(1) + ' mol% vapour and ' + ((1 - fl.beta) * 100).toFixed(1) +
+      ' mol% liquid (β = ' + fl.beta.toFixed(4) + '), reached in ' + fl.it + ' iterations.';
+    const frow = r.comps.map((c, i) =>
+      '<tr><td>' + c.f + ' (' + (i + 1) + ')</td><td>' + x[i].toFixed(3) + '</td><td>' + fl.x[i].toFixed(4) + '</td><td>' + fl.y[i].toFixed(4) +
+      '</td><td>' + plain(fl.K[i], 4) + '</td><td>' + plain(fl.fL[i], 4) + '</td><td>' + plain(fl.fV[i], 4) + '</td></tr>').join('');
+    $('flashTable').innerHTML = '<table><thead><tr><th>Component</th><th>Feed z<sub>i</sub></th><th>Liquid x<sub>i</sub></th><th>Vapour y<sub>i</sub></th><th>K<sub>i</sub></th><th>Fugacity in liquid (bar)</th><th>Fugacity in vapour (bar)</th></tr></thead><tbody>' + frow + '</tbody></table>';
+    $('flashNote').textContent = 'Each component has the same fugacity in both phases even though its mole fraction is different in each. That equality is the equilibrium condition the flash solves for.';
+  } else {
+    $('flashText').textContent = fl.pure
+      ? 'The feed is a single component, so there is no mixture to split. Set the mole fraction between 0 and 1.'
+      : 'At ' + plain(inp.T) + ' K and ' + plain(inp.P) + ' bar this feed stays as a single ' + (fl.kind ? fl.kind + ' ' : '') +
+        'phase, so there is nothing to split. Use the button below to find a temperature and pressure at which this mixture splits into liquid and vapour.';
+    $('flashTable').innerHTML = '';
+    $('flashNote').textContent = !searchFailed ? '' : inp.c1.id === inp.c2.id
+      ? 'Both components are the same, so the liquid and vapour would have the same composition. Choose two different components.'
+      : 'No two-phase conditions were found for this mixture between 0.05 and 300 bar. Try a different pair of components.';
+  }
+  $('flashFind').hidden = fl.twoPhase || !!fl.pure;
+  searchFailed = false;
+
+  // Summary
+  $('summary').innerHTML =
+    '<div><span class="k">Z</span><span class="v">' + chosen.Z.toFixed(4) + '</span></div>' +
+    '<div><span class="k">V (cm³/mol)</span><span class="v">' + plain(chosen.V) + '</span></div>' +
+    '<div><span class="k">φ of ' + r.comps[0].f + '</span><span class="v">' + chosen.phi[0].toFixed(3) + '</span></div>' +
+    '<div><span class="k">φ of ' + r.comps[1].f + '</span><span class="v">' + chosen.phi[1].toFixed(3) + '</span></div>' +
+    '<div class="phase">' + (two ? 'Three real roots; showing the ' + (isLiquid ? 'liquid-like' : 'vapour-like') + ' root.' : 'One real root: single phase.') + '</div>';
+
+  if (!firstRender) typeset([$('s2'), $('s3'), $('s4'), $('s5')]);
+  firstRender = false;
+}
+
+let timer = null;
+function schedule() { clearTimeout(timer); timer = setTimeout(render, 120); }
+
+els.x1r.addEventListener('input', () => { els.x1.value = els.x1r.value; rootChoice = 'auto'; schedule(); });
+els.x1.addEventListener('input', () => { els.x1r.value = els.x1.value; rootChoice = 'auto'; schedule(); });
+for (const k of ['T', 'P', 'k12']) els[k].addEventListener('input', () => { rootChoice = 'auto'; schedule(); });
+for (const k of ['c1', 'c2']) els[k].addEventListener('change', () => {
+  const pair = [els.c1.value, els.c2.value].sort().join('-');
+  els.k12.value = pair === 'ch4-co2' ? '0.09' : '0';
+  rootChoice = 'auto'; render();
+});
+$('pickL').addEventListener('click', () => { rootChoice = 'l'; render(); });
+$('pickV').addEventListener('click', () => { rootChoice = 'v'; render(); });
+$('reset').addEventListener('click', () => { setDefaults(); render(); });
+$('twoPhase').addEventListener('click', () => {
+  const got = readInputs();
+  if (got.error) return;
+  const found = findTwoPhase(got.inp);
+  if (found) { els.T.value = String(found.T); els.P.value = String(found.P); }
+  else searchFailed = true;
+  rootChoice = 'auto'; render();
+});
+
+setDefaults();
+render();
+</script>
+
+</body>
+</html>
