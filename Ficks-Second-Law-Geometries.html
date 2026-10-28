@@ -66,6 +66,16 @@ th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--lin
 th { font-weight: 600; color: var(--muted); font-size: 0.82rem; }
 tbody tr:last-child td { border-bottom: 0; }
 
+/* Optional collapsed section */
+.optional summary { cursor: pointer; list-style: none; }
+.optional summary::-webkit-details-marker { display: none; }
+.optional summary .eyebrow { background: var(--line); color: var(--ink); }
+.optional summary h2 { margin: 0 0 6px; }
+.optional summary h2::before { content: "▸ "; color: var(--muted); font-size: 0.9em; }
+.optional details[open] summary h2::before { content: "▾ "; }
+.optional summary .hint { margin: 0; max-width: 72ch; }
+.optional summary:hover h2 { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.optional-body { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 /* Geometry sections: figure left, text right */
 .geo { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 22px; align-items: start; }
 .fig { margin: 0; background: #ffffff; border: 1px solid var(--line); border-radius: 6px; padding: 6px; position: sticky; top: 16px; }
@@ -324,9 +334,14 @@ canvas { display: block; width: 100%; }
       <p class="note"><strong>Two things to carry with you.</strong> At steady state these give \(N_{Ar}\,r = \text{const}\) in a cylinder and \(N_{Ar}\,r^2 = \text{const}\) in a sphere: the same number of moles per second crosses every shell. And if the stagnant or dilute assumption is dropped but \(c\) and \(D_{AB}\) stay constant, the equation becomes \(\partial c_A/\partial t + \mathbf{v}\cdot\nabla c_A = D_{AB}\nabla^2 c_A + R_A\), the convection–diffusion equation. Fick's second law is its special case with convection and reaction switched off.</p>
     </section>
 
-    <section class="step">
-      <p class="eyebrow">Step 7</p>
-      <h2>Solving it analytically: separation of variables</h2>
+    <section class="step optional">
+      <details>
+        <summary>
+          <span class="eyebrow">Optional</span>
+          <h2>Where the charts come from: solving the equation analytically</h2>
+          <p class="hint">Not examinable. In this course transient problems are solved with the charts. Open this if you want to see the series solutions those charts plot, derived by separation of variables.</p>
+        </summary>
+        <div class="optional-body">
       <p>Take the problem the Simulation tab runs. A body starts at a uniform concentration \(c_{A0}\); at \(t = 0\) its surface is brought to \(c_{A\infty}\) and held there. Make everything dimensionless:</p>
       <div class="eq">\[ C = \frac{c_A - c_{A\infty}}{c_{A0} - c_{A\infty}}, \qquad \xi = \frac{x}{a}\ \text{or}\ \frac{r}{a}, \qquad \mathrm{Fo} = \frac{D_{AB}\,t}{a^2} \]</div>
       <p>so that \(C\) starts at 1 and the surface is held at 0. The three one-dimensional problems are then:</p>
@@ -377,6 +392,8 @@ canvas { display: block; width: 100%; }
       </table></div>
       <p>Every case is a sum of shapes that decay exponentially, the weight in the orthogonality integral is the same area factor that appeared in the shell balance, and after \(\mathrm{Fo} \approx 0.1\) only the first term matters. That last fact is what the Heisler and Gurney–Lurie charts are built on: one straight line per geometry on a semi-log plot.</p>
       <p class="note"><strong>Short times.</strong> For \(\mathrm{Fo} \lesssim 0.05\) the series converge slowly because the change has not yet reached the centre and the body behaves as if it were semi-infinite. There the error-function solution is the practical one: measured inward from the surface, \(C = \operatorname{erf}\!\big[x'/(2\sqrt{D_{AB}t})\big]\), independent of \(a\) and of the geometry. Switch the Simulation tab to the central-core start to see the same series machinery at work with different coefficients \(A_n\).</p>
+        </div>
+      </details>
     </section>
 
   </section>
