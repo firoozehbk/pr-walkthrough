@@ -516,9 +516,9 @@ window.MathJax = {
     C = [new Float64Array(NX), new Float64Array(NR), new Float64Array(NR)];
     for (let i = 0; i < NX; i++) C[0][i] = ic(-1 + i*dx);
     for (let i = 0; i < NR; i++) { C[1][i] = ic(i*dr); C[2][i] = ic(i*dr); }
+    E0 = [0, 1, 2].map(m => avg(m) || 1);          // initial volume average, taken before the surface is set to C = 0
     C[0][0] = C[0][NX-1] = 0; C[1][NR-1] = 0; C[2][NR-1] = 0;
     Fo = 0; hist = []; snaps = [[], [], []]; half = [null, null, null];
-    E0 = [0, 1, 2].map(m => avg(m) || 1);
     hist.push([0, 1, 1, 1]);
   }
   // volume-weighted average of C: weight 1, r, r^2
